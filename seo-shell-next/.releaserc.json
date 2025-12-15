@@ -1,5 +1,5 @@
 {
-  "tagFormat": "${name}@${version}",
+  "tagFormat": "@seo-shell/seo-shell@${version}",
   "branches": [
     "main",
     {

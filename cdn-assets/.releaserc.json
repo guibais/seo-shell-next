@@ -1,5 +1,5 @@
 {
-  "tagFormat": "${name}@${version}",
+  "tagFormat": "@seo-shell/cdn-assets@${version}",
   "branches": [
     "main",
     {
