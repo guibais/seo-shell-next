@@ -99,7 +99,7 @@ export const getCdnAssetsFromEnv = async (
   return {
     cssHrefs: [],
     jsSrcs: [],
-    faviconHref: undefined,
+    faviconHref: null,
   };
 };
 

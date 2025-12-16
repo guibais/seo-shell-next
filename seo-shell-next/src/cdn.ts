@@ -1,13 +1,13 @@
 export type CdnAssets = {
   cssHrefs: string[];
   jsSrcs: string[];
-  faviconHref?: string;
+  faviconHref: string | null;
 };
 
 export type CdnAssetsManifest = {
   cssHrefs?: string[];
   jsSrcs?: string[];
-  faviconHref?: string;
+  faviconHref?: string | null;
 };
 
 export type ResolveCdnAssetsOptions = {
@@ -41,14 +41,14 @@ const applyBaseUrl = (
     jsSrcs: assets.jsSrcs.map((src) => prefixIfRelative(baseUrl, src)),
     faviconHref: assets.faviconHref
       ? prefixIfRelative(baseUrl, assets.faviconHref)
-      : undefined,
+      : null,
   };
 };
 
 const parseManifest = (manifest: CdnAssetsManifest): CdnAssets => ({
   cssHrefs: uniqueStrings(manifest.cssHrefs ?? []),
   jsSrcs: uniqueStrings(manifest.jsSrcs ?? []),
-  faviconHref: manifest.faviconHref,
+  faviconHref: manifest.faviconHref ?? null,
 });
 
 export const resolveCdnAssets = async (
@@ -97,6 +97,18 @@ const extractAssetsFromHtml = (html: string): CdnAssets => {
     html.matchAll(/<script[^>]+src=["']([^"']+)["'][^>]*>/gi)
   ).map((m) => m[1]);
 
+  const modulePreloads = Array.from(
+    html.matchAll(
+      /<link[^>]+rel=["']modulepreload["'][^>]+href=["']([^"']+)["'][^>]*>/gi
+    )
+  ).map((m) => m[1]);
+
+  const modulePreloadsAlt = Array.from(
+    html.matchAll(
+      /<link[^>]+href=["']([^"']+)["'][^>]+rel=["']modulepreload["'][^>]*>/gi
+    )
+  ).map((m) => m[1]);
+
   const faviconMatch = html.match(
     /<link[^>]+rel=["'](?:icon|shortcut icon)["'][^>]+href=["']([^"']+)["'][^>]*>/i
   );
@@ -104,11 +116,11 @@ const extractAssetsFromHtml = (html: string): CdnAssets => {
     /<link[^>]+href=["']([^"']+)["'][^>]+rel=["'](?:icon|shortcut icon)["'][^>]*>/i
   );
 
-  const faviconHref = faviconMatch?.[1] ?? faviconMatchAlt?.[1] ?? undefined;
+  const faviconHref = faviconMatch?.[1] ?? faviconMatchAlt?.[1] ?? null;
 
   return {
     cssHrefs: uniqueStrings([...cssHrefs, ...cssHrefsAlt]),
-    jsSrcs: uniqueStrings(jsSrcs),
+    jsSrcs: uniqueStrings([...jsSrcs, ...modulePreloads, ...modulePreloadsAlt]),
     faviconHref,
   };
 };

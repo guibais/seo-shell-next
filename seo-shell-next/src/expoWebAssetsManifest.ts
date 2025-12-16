@@ -9,7 +9,7 @@ import {
 export type ExpoWebAssetsManifest = {
   cssHrefs: string[];
   jsSrcs: string[];
-  faviconHref?: string;
+  faviconHref: string | null;
 };
 
 export type WebAssetsManifest = ExpoWebAssetsManifest;
@@ -60,7 +60,7 @@ export const extractExpoWebAssetsManifestFromHtml = (
       html.matchAll(
         /<link[^>]+rel=["']icon["'][^>]+href=["']([^"']+)["'][^>]*>/g
       )
-    ).map((m) => m[1])[0] || "/favicon.ico";
+    ).map((m) => m[1])[0] ?? null;
 
   return {
     cssHrefs: uniqueStrings(cssHrefs),
