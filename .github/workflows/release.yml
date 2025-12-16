@@ -31,7 +31,6 @@ jobs:
         working-directory: seo-shell-next
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           npm install
           npx semantic-release
@@ -40,7 +39,6 @@ jobs:
         working-directory: seo-shell-events
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           npm install
           npx semantic-release
