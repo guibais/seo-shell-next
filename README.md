@@ -35,6 +35,11 @@ Your SPA (unchanged) + SEO Shell = Google-friendly app
 
 ## Table of Contents
 
+- [The Problem](#the-problem)
+- [The Solution](#the-solution)
+- [How It Works](#how-it-works)
+- [Architecture](#architecture)
+- [Requirements](#requirements)
 - [Important Requirements](#important-requirements)
 - [Installation](#installation)
 - [Quick Start](#quick-start)
@@ -42,7 +47,6 @@ Your SPA (unchanged) + SEO Shell = Google-friendly app
 - [Two-Way Communication (Optional)](#two-way-communication-optional)
 - [Smart Dist Detection](#smart-dist-detection)
 - [Next.js Configuration](#nextjs-configuration)
-- [Architecture](#architecture)
 - [Real-World Example](#real-world-example)
 - [API Reference](#api-reference)
 
@@ -173,7 +177,7 @@ Inspired by **microservices**: each part does one thing well.
 
 ---
 
-## ⚠️ Important Requirements
+## Important Requirements
 
 Before you start, make sure you understand these **required** steps:
 
