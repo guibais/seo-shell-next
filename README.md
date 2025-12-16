@@ -6,39 +6,20 @@
 
 > **Tested with:** Expo Web, Vite (React/Angular). Should be compatible with most modern bundlers (CRA, Parcel, Webpack, etc.).
 
----
-
-## ⚠️ Important Requirements
-
-Before you start, make sure you understand these **required** steps:
-
-1. **Create `pages/[...path].tsx`** — Required to avoid 404 errors on SPA routes. [See details](#catch-all-route-required)
-
-2. **Configure once in `lib/seoShell.ts`** — All config is centralized:
-
-   ```ts
-   export const seoShellApp = createSeoShellApp({
-     cdn: {
-       indexUrl: "https://cdn.example.com/app/index.html",
-       baseUrl: "https://cdn.example.com/app",
-     },
-     defaults: { seo: { title: "My App", description: "..." } },
-   });
-   ```
-
-3. **Add `SeoShellProvider` in `_app.tsx`** — Wraps your app with SEO capabilities. [See details](#3-add-the-provider-in-_apptsx)
-
----
-
 ## The Problem
 
-You built your app with Expo, Vite, or Create React App. It works great. But Google can't see it.
+You built your app with Expo, Vite, Ionic, or Create React App. It works great. But Google can't see it.
 
-Traditional solutions say: "Rewrite everything in Next.js." That's months of work.
+Traditional solutions say: "Rewrite everything in Next.js." But:
+
+- **You already have a working SPA** — rewriting is months of work
+- **Next.js is overkill** — you just need SEO, not a full framework migration
+- **You're building a native-first app** — Expo Web or Ionic are just the web version of your mobile app, you want to focus on the app, not on web infrastructure
+- **Your team knows React/Vue/Angular** — not Next.js
 
 ## The Solution
 
-**SEO Shell** wraps your existing SPA with an invisible Next.js layer that handles SEO:
+**SEO Shell** adds SEO to your existing SPA without changing it:
 
 - ✅ **Dynamic titles, descriptions, Open Graph** — per page
 - ✅ **JSON-LD structured data** — for rich search results
@@ -191,6 +172,28 @@ Inspired by **microservices**: each part does one thing well.
   - ✅ Docker container
   - ✅ Any Node.js server
   - ❌ `next export` (static)
+
+---
+
+## ⚠️ Important Requirements
+
+Before you start, make sure you understand these **required** steps:
+
+1. **Create `pages/[...path].tsx`** — Required to avoid 404 errors on SPA routes. [See details](#catch-all-route-required)
+
+2. **Configure once in `lib/seoShell.ts`** — All config is centralized:
+
+   ```ts
+   export const seoShellApp = createSeoShellApp({
+     cdn: {
+       indexUrl: "https://cdn.example.com/app/index.html",
+       baseUrl: "https://cdn.example.com/app",
+     },
+     defaults: { seo: { title: "My App", description: "..." } },
+   });
+   ```
+
+3. **Add `SeoShellProvider` in `_app.tsx`** — Wraps your app with SEO capabilities. [See details](#3-add-the-provider-in-_apptsx)
 
 ---
 
