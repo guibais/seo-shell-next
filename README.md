@@ -35,16 +35,14 @@ Your SPA (unchanged) + SEO Shell = Google-friendly app
 
 ## Table of Contents
 
-- [⚠️ Important Requirements](#️-important-requirements)
-- [How It Works](#how-it-works)
-- [Architecture](#architecture)
-- [Requirements](#requirements)
+- [Important Requirements](#important-requirements)
 - [Installation](#installation)
 - [Quick Start](#quick-start)
-- [Smart Dist Detection](#smart-dist-detection)
 - [Catch-All Route (Required)](#catch-all-route-required)
+- [Two-Way Communication (Optional)](#two-way-communication-optional)
+- [Smart Dist Detection](#smart-dist-detection)
 - [Next.js Configuration](#nextjs-configuration)
-- [Web Events (Optional)](#web-events-optional)
+- [Architecture](#architecture)
 - [Real-World Example](#real-world-example)
 - [API Reference](#api-reference)
 
@@ -444,52 +442,66 @@ export default function Document() {
 
 ---
 
-## Web Events (Optional)
+## Two-Way Communication (Optional)
 
-> **This section is optional.** You only need Web Events if you want to pass data from Next.js to your SPA to avoid duplicate API calls.
+SEO Shell includes a tiny event layer built on browser `CustomEvent`. It lets you communicate:
 
-If you fetch data in Next.js for SEO purposes (e.g., a professional's name and bio), you can send that same data to your SPA so it doesn't need to fetch it again.
+- **Next.js -> SPA** (inject data already fetched on SSR, so your SPA can reuse it)
+- **SPA -> Next.js** (listen to SPA events inside Next client components)
 
-**When to use:**
+It also emits lifecycle events:
 
-- ✅ You fetch data in Next.js and want to reuse it in your SPA
-- ✅ You want to avoid duplicate API calls
-- ❌ You don't need this if your SPA fetches its own data independently
+- **`seo-shell:ready`** — fired before the SPA scripts run
+- **`seo-shell:hydrated`** — fired after the SPA mounts into `#root`
 
-### Step 1: Install `@seo-shell/events` in your SPA project
-
-This is a **separate, lightweight package** (~1KB) that only contains the event functions. Install it in your SPA project (Expo, Vite, React, etc.):
+### Install `@seo-shell/events` in your SPA project
 
 ```bash
 npm i @seo-shell/events@next
 ```
 
-### Step 2: Send data from Next.js
+### Next.js -> SPA (avoid duplicate fetch)
+
+In Next.js, collect events during SSR:
 
 ```tsx
-import { withSeoShell, createEventBridge } from "@seo-shell/seo-shell/server";
+import { createEventBridge } from "@seo-shell/seo-shell/server";
+import { seoShellApp } from "~/lib/seoShell";
 
-export const getServerSideProps = withSeoShell(
-  async () => {
-    const professional = await fetchProfessional("john-doe");
-    const events = createEventBridge();
-    events.queue("professional", professional);
+export const getServerSideProps = seoShellApp.withSeoShell(async () => {
+  const professional = await fetchProfessional("john-doe");
+  const events = createEventBridge();
+  events.queue("professional", professional);
 
-    return {
-      props: {
-        seo: {
-          title: professional.name,
-          description: professional.bio,
-        },
-        __events: events.pendingEvents,
+  return {
+    props: {
+      seo: {
+        title: professional.name,
+        description: professional.bio,
       },
-    };
-  },
-  { seoShell }
-);
+      __events: events.pendingEvents,
+    },
+  };
+});
 ```
 
-### Step 3: Receive data in your SPA
+Then dispatch those events on the client (e.g. in `_app.tsx`):
+
+```tsx
+import { sendEvent } from "@seo-shell/seo-shell";
+import { useEffect } from "react";
+
+export default function App({ Component, pageProps }) {
+  useEffect(() => {
+    const events = pageProps.__events ?? [];
+    events.forEach((e) => sendEvent(e.name, e.payload));
+  }, [pageProps.__events]);
+
+  return <Component {...pageProps} />;
+}
+```
+
+In your SPA, listen:
 
 ```ts
 import { watchEvent } from "@seo-shell/events";
@@ -497,6 +509,31 @@ import { watchEvent } from "@seo-shell/events";
 watchEvent("professional", (professional) => {
   console.log("Received:", professional);
 });
+```
+
+### SPA -> Next.js
+
+In your SPA, send events:
+
+```ts
+import { sendEvent } from "@seo-shell/events";
+
+sendEvent("spa:navigation", { path: "/profile" });
+```
+
+In Next.js (client-side), listen:
+
+```ts
+import { watchEvent } from "@seo-shell/seo-shell";
+import { useEffect } from "react";
+
+export const useSpaNavigationEvents = () => {
+  useEffect(() => {
+    return watchEvent("spa:navigation", (payload) => {
+      console.log("SPA navigation:", payload);
+    });
+  }, []);
+};
 ```
 
 ---
