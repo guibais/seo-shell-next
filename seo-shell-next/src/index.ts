@@ -36,3 +36,9 @@ export {
   inferOgImageType,
 } from "./seo/seoHelpers";
 export type { BuildOgImageInput } from "./seo/seoHelpers";
+
+export { sendEvent, watchEvent, createEventBridge } from "./events";
+export type { SeoShellEventPayload, SeoShellEventHandler } from "./events";
+
+export { SeoShellDocument, createSeoShellDocument } from "./SeoShellDocument";
+export type { SeoShellDocumentProps } from "./SeoShellDocument";

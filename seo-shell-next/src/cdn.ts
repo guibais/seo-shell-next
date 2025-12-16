@@ -71,6 +71,63 @@ export type CdnEnvConfig = {
   baseUrl?: string;
   version?: string;
   manifestFileName?: string;
+  indexFileName?: string;
+};
+
+export type ResolveCdnAssetsFromHtmlOptions = {
+  indexUrl: string;
+  baseUrl?: string;
+  fetchInit?: RequestInit;
+};
+
+const extractAssetsFromHtml = (html: string): CdnAssets => {
+  const cssHrefs = Array.from(
+    html.matchAll(
+      /<link[^>]+rel=["']stylesheet["'][^>]+href=["']([^"']+)["'][^>]*>/gi
+    )
+  ).map((m) => m[1]);
+
+  const cssHrefsAlt = Array.from(
+    html.matchAll(
+      /<link[^>]+href=["']([^"']+)["'][^>]+rel=["']stylesheet["'][^>]*>/gi
+    )
+  ).map((m) => m[1]);
+
+  const jsSrcs = Array.from(
+    html.matchAll(/<script[^>]+src=["']([^"']+)["'][^>]*>/gi)
+  ).map((m) => m[1]);
+
+  const faviconMatch = html.match(
+    /<link[^>]+rel=["'](?:icon|shortcut icon)["'][^>]+href=["']([^"']+)["'][^>]*>/i
+  );
+  const faviconMatchAlt = html.match(
+    /<link[^>]+href=["']([^"']+)["'][^>]+rel=["'](?:icon|shortcut icon)["'][^>]*>/i
+  );
+
+  const faviconHref = faviconMatch?.[1] ?? faviconMatchAlt?.[1] ?? undefined;
+
+  return {
+    cssHrefs: uniqueStrings([...cssHrefs, ...cssHrefsAlt]),
+    jsSrcs: uniqueStrings(jsSrcs),
+    faviconHref,
+  };
+};
+
+export const resolveCdnAssetsFromHtml = async (
+  options: ResolveCdnAssetsFromHtmlOptions
+): Promise<CdnAssets> => {
+  const response = await fetch(options.indexUrl, {
+    headers: { Accept: "text/html" },
+    ...options.fetchInit,
+  });
+
+  if (!response.ok) {
+    throw new Error(`cdn_index_fetch_failed:${response.status}`);
+  }
+
+  const html = await response.text();
+  const assets = extractAssetsFromHtml(html);
+  return applyBaseUrl(options.baseUrl, assets);
 };
 
 export const buildCdnManifestUrl = (config: CdnEnvConfig): string | null => {
@@ -91,4 +148,22 @@ export const buildCdnManifestUrl = (config: CdnEnvConfig): string | null => {
 
   const trimmedVersion = version.replace(/^\/+/, "").replace(/\/+$/, "");
   return `${trimmedBase}/${trimmedVersion}/${manifestFileName}`;
+};
+
+export const buildCdnIndexUrl = (config: CdnEnvConfig): string | null => {
+  const baseUrl = config.baseUrl?.trim();
+  if (!baseUrl) {
+    return null;
+  }
+
+  const version = config.version?.trim();
+  const indexFileName = (config.indexFileName || "index.html").trim();
+
+  const trimmedBase = baseUrl.replace(/\/+$/, "");
+  if (!version) {
+    return `${trimmedBase}/${indexFileName}`;
+  }
+
+  const trimmedVersion = version.replace(/^\/+/, "").replace(/\/+$/, "");
+  return `${trimmedBase}/${trimmedVersion}/${indexFileName}`;
 };

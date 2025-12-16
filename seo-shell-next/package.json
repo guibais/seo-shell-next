@@ -16,12 +16,8 @@
       "require": "./dist/server.cjs"
     }
   },
-  "bin": {
-    "seo-shell-next-web-assets": "./bin/seo-shell-next-web-assets.cjs"
-  },
   "files": [
-    "dist",
-    "bin"
+    "dist"
   ],
   "scripts": {
     "build": "tsup src/index.ts src/server.ts --format esm,cjs --dts --out-dir dist --clean",
@@ -41,6 +37,12 @@
     "@semantic-release/github": "^11.0.6",
     "@semantic-release/npm": "^12.0.2",
     "@semantic-release/release-notes-generator": "^14.1.0",
+    "@types/node": "^22.15.29",
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "next": "^14.2.0",
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0",
     "semantic-release": "^24.2.9",
     "tsup": "^8.5.0",
     "typescript": "^5.9.2"

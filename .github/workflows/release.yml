@@ -27,8 +27,8 @@ jobs:
           node-version: 20
           registry-url: https://registry.npmjs.org
 
-      - name: Release cdn-assets
-        working-directory: cdn-assets
+      - name: Release seo-shell
+        working-directory: seo-shell-next
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
@@ -36,8 +36,8 @@ jobs:
           npm install
           npx semantic-release
 
-      - name: Release seo-shell
-        working-directory: seo-shell-next
+      - name: Release seo-shell-events
+        working-directory: seo-shell-events
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

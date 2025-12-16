@@ -44,6 +44,9 @@ export {
 
 export { getDefaultSeoFromEnv, getCanonicalUrlFromCtx } from "./defaultNext";
 
+export { sendEvent, watchEvent, createEventBridge } from "./events";
+export type { SeoShellEventPayload, SeoShellEventHandler } from "./events";
+
 export type {
   SitemapUrl,
   SitemapEntry,

@@ -1,8 +1,10 @@
 {
-  "name": "@seo-shell/cdn-assets",
+  "name": "@seo-shell/events",
   "version": "0.1.0-next.0",
+  "description": "Lightweight event bridge for SEO Shell - use in your SPA to receive data from Next.js",
   "type": "module",
   "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
@@ -30,5 +32,14 @@
     "semantic-release": "^24.2.9",
     "tsup": "^8.5.0",
     "typescript": "^5.9.2"
-  }
+  },
+  "keywords": [
+    "seo",
+    "events",
+    "spa",
+    "react",
+    "expo",
+    "vite"
+  ],
+  "license": "MIT"
 }
