@@ -13,18 +13,18 @@ export type SeoOgImage = {
 };
 
 export type SeoHeadProps = {
-  title?: string;
-  description?: string;
-  canonicalUrl?: string;
-  ogType?: string;
-  ogSiteName?: string;
-  ogLocale?: string;
-  ogImage?: SeoOgImage;
-  twitterSite?: string;
-  twitterCreator?: string;
-  keywords?: string[];
-  jsonLd?: JsonLd | JsonLd[];
-  noIndex?: boolean;
+  title?: string | null;
+  description?: string | null;
+  canonicalUrl?: string | null;
+  ogType?: string | null;
+  ogSiteName?: string | null;
+  ogLocale?: string | null;
+  ogImage?: SeoOgImage | null;
+  twitterSite?: string | null;
+  twitterCreator?: string | null;
+  keywords?: string[] | null;
+  jsonLd?: JsonLd | JsonLd[] | null;
+  noIndex?: boolean | null;
 };
 
 export const SeoHead = ({

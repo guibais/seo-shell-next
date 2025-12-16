@@ -42,12 +42,12 @@ export const getDefaultSeoFromEnv = (
 ): SeoHeadProps => {
   const canonicalUrl = getCanonicalUrlFromCtx(ctx);
 
-  const title = process.env.SEO_SHELL_DEFAULT_TITLE?.trim() || "";
-  const description = process.env.SEO_SHELL_DEFAULT_DESCRIPTION?.trim() || "";
+  const title = process.env.SEO_SHELL_DEFAULT_TITLE?.trim() || null;
+  const description = process.env.SEO_SHELL_DEFAULT_DESCRIPTION?.trim() || null;
 
   return {
-    title: title || undefined,
-    description: description || undefined,
+    title,
+    description,
     canonicalUrl,
   };
 };
