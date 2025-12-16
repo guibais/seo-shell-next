@@ -4,6 +4,8 @@
 
 > 🎯 For developers who already have a SPA (Expo, Vite, CRA, etc.) and want to be found on Google — without rewriting their entire app.
 
+> **Tested with:** Expo Web, Vite (React/Angular). Should be compatible with most modern bundlers (CRA, Parcel, Webpack, etc.).
+
 ---
 
 ## The Problem

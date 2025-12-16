@@ -59,7 +59,7 @@ export const createSeoShellApp = (
       indexFileName: appConfig.cdn.indexFileName,
     },
     defaults: {
-      defaultNoIndex: appConfig.defaults?.defaultNoIndex ?? true,
+      defaultNoIndex: appConfig.defaults?.defaultNoIndex ?? false,
     },
   };
 
