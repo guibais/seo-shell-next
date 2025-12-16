@@ -1,11 +1,37 @@
 # @seo-shell/seo-shell
 
-Add SEO to any SPA (Expo, Vite, React, etc.) using Next.js as an invisible SEO layer.
+**Use your favorite SPA framework. Get Next.js-level SEO.**
+
+> 🎯 For developers who already have a SPA (Expo, Vite, CRA, etc.) and want to be found on Google — without rewriting their entire app.
+
+---
+
+## The Problem
+
+You built your app with Expo, Vite, or Create React App. It works great. But Google can't see it.
+
+Traditional solutions say: "Rewrite everything in Next.js." That's months of work.
+
+## The Solution
+
+**SEO Shell** wraps your existing SPA with an invisible Next.js layer that handles SEO:
+
+- ✅ **Dynamic titles, descriptions, Open Graph** — per page
+- ✅ **JSON-LD structured data** — for rich search results
+- ✅ **Sitemaps** — auto-generated
+- ✅ **Canonical URLs** — no duplicate content
+- ✅ **Zero changes to your SPA** — it runs exactly as before
+
+```
+Your SPA (unchanged) + SEO Shell = Google-friendly app
+```
+
+---
 
 ## Table of Contents
 
-- [Architecture](#architecture)
 - [How It Works](#how-it-works)
+- [Architecture](#architecture)
 - [Requirements](#requirements)
 - [Installation](#installation)
 - [Quick Start](#quick-start)
@@ -17,9 +43,21 @@ Add SEO to any SPA (Expo, Vite, React, etc.) using Next.js as an invisible SEO l
 
 ---
 
+## How It Works
+
+1. **Your SPA** stays exactly as it is — built with Expo, Vite, CRA, whatever
+2. **Upload your SPA build** to static storage (Cloudflare R2, AWS S3, etc.)
+3. **Deploy a Next.js app** that uses SEO Shell
+4. **Next.js intercepts requests**, fetches your SPA from the CDN, injects SEO tags, and serves it
+5. **Users and crawlers** see a fully SEO-optimized page that boots your SPA normally
+
+The user never knows Next.js is involved. Your SPA runs exactly as before.
+
+---
+
 ## Architecture
 
-This library is inspired by **microservices architecture**: each part of your system does one thing well.
+Inspired by **microservices**: each part does one thing well.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -71,9 +109,7 @@ This library is inspired by **microservices architecture**: each part of your sy
 3. Next.js fetches your SPA's `index.html` from the CDN, injects SEO tags, and serves it to the user
 4. The user sees a fully SEO-optimized page that boots your SPA normally
 
----
-
-## How It Works
+### Request Flow
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
