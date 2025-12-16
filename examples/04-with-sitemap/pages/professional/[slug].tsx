@@ -1,11 +1,11 @@
 import type { GetServerSidePropsContext } from "next";
-import { withSeoShell, createEventBridge } from "@seo-shell/seo-shell/server";
+import { createEventBridge } from "@seo-shell/seo-shell/server";
 import { buildBreadcrumbListJsonLd } from "@seo-shell/seo-shell";
-import { seoShell } from "../../lib/seoShell";
+import { seoShellApp } from "../../lib/seoShell";
 import { sitemapConfig } from "../../lib/sitemapConfig";
 import { fetchProfessional } from "../../lib/api";
 
-export const getServerSideProps = withSeoShell(
+export const getServerSideProps = seoShellApp.withSeoShell(
   async (ctx: GetServerSidePropsContext) => {
     const slug = ctx.params?.slug as string;
     const professional = await fetchProfessional(slug);
@@ -37,11 +37,8 @@ export const getServerSideProps = withSeoShell(
     };
   },
   {
-    seoShell,
-    options: {
-      ensureSitemaps: true,
-      sitemapConfig,
-    },
+    ensureSitemaps: true,
+    sitemapConfig,
   }
 );
 

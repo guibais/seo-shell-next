@@ -11,6 +11,7 @@ export default function App({ Component, pageProps }: AppProps) {
   return (
     <SeoShellProvider
       assets={shell.assets}
+      noIndex={shell.noIndex}
       seo={{ ...shell.defaultSeo, ...pageProps.seo }}
     >
       <Component {...pageProps} />

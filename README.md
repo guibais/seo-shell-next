@@ -177,35 +177,32 @@ npm i @seo-shell/seo-shell@next
 
 ## Quick Start
 
-### 1. Configure the shell
+### 1. Configure the shell (once)
 
 ```ts
-import { createSeoShell } from "@seo-shell/seo-shell/server";
+import { createSeoShellApp } from "@seo-shell/seo-shell/server";
 
-export const seoShell = createSeoShell({
+export const seoShellApp = createSeoShellApp({
   cdn: {
     indexUrl: "https://cdn.example.com/app/index.html",
+    baseUrl: "https://cdn.example.com/app",
   },
 });
 ```
 
-### 2. Wrap your pages
+### 2. Wrap your pages (no config needed per page)
 
 ```tsx
-import { withSeoShell } from "@seo-shell/seo-shell/server";
-import { seoShell } from "../lib/seoShell";
+import { seoShellApp } from "../lib/seoShell";
 
-export const getServerSideProps = withSeoShell(
-  async () => ({
-    props: {
-      seo: {
-        title: "Home",
-        description: "Welcome to my app",
-      },
+export const getServerSideProps = seoShellApp.withSeoShell(async () => ({
+  props: {
+    seo: {
+      title: "Home",
+      description: "Welcome to my app",
     },
-  }),
-  { seoShell }
-);
+  },
+}));
 
 export default function Page() {
   return null;
@@ -224,6 +221,7 @@ export default function App({ Component, pageProps }) {
   return (
     <SeoShellProvider
       assets={shell.assets}
+      noIndex={shell.noIndex}
       seo={{ ...shell.defaultSeo, ...pageProps.seo }}
     >
       <Component {...pageProps} />
@@ -339,21 +337,11 @@ Your SPA likely has client-side routing (React Router, Expo Router, etc.). To pr
 Create `pages/[...path].tsx`:
 
 ```tsx
-import {
-  getDefaultSeoFromEnv,
-  getSeoShellConfigFromEnv,
-  withSeoShell,
-} from "@seo-shell/seo-shell/server";
+import { seoShellApp } from "../lib/seoShell";
 
-export const getServerSideProps = withSeoShell(
-  async () => {
-    return { props: {} };
-  },
-  {
-    seoShellConfig: getSeoShellConfigFromEnv(),
-    getDefaultSeo: getDefaultSeoFromEnv,
-  }
-);
+export const getServerSideProps = seoShellApp.withSeoShell(async () => ({
+  props: {},
+}));
 
 export default function SpaFallbackPage() {
   return null;
@@ -481,18 +469,13 @@ Complete example from a production app with GraphQL, sitemaps, and full SEO:
 ### `pages/profissional/[slug].tsx`
 
 ```tsx
-import type { GetServerSideProps } from "next";
+import type { GetServerSideProps, GetServerSidePropsContext } from "next";
 import {
   buildBreadcrumbListJsonLd,
   buildLocalBusinessJsonLd,
 } from "@seo-shell/seo-shell";
 import type { SeoHeadProps } from "@seo-shell/seo-shell";
-import {
-  getDefaultSeoFromEnv,
-  getSeoShellConfigFromEnv,
-  withSeoShell,
-} from "@seo-shell/seo-shell/server";
-
+import { seoShellApp } from "~/lib/seoShell";
 import { getBaseUrl } from "~/lib/absoluteUrl";
 import { fetchGraphQL } from "~/lib/graphqlFetch";
 import { COMPANY_BY_SLUG_QUERY } from "~/lib/seoQueries";
@@ -505,7 +488,8 @@ type PageProps = {
   seo?: SeoHeadProps;
 };
 
-const handler: GetServerSideProps<PageProps> = async ({ params, req }) => {
+export const getServerSideProps = seoShellApp.withSeoShell(
+  async ({ params, req }: GetServerSidePropsContext) => {
   const slug = String(params?.slug ?? "");
   if (!slug) return { notFound: true };
 
@@ -592,10 +576,8 @@ const handler: GetServerSideProps<PageProps> = async ({ params, req }) => {
   }
 };
 
-export const getServerSideProps = withSeoShell(handler, {
-  seoShellConfig: getSeoShellConfigFromEnv(),
-  getDefaultSeo: getDefaultSeoFromEnv,
-});
+  }
+);
 
 export default function ProfissionalSlugPage() {
   return null;
@@ -605,24 +587,14 @@ export default function ProfissionalSlugPage() {
 ### `pages/index.tsx` (with sitemap generation)
 
 ```tsx
-import {
-  getDefaultSeoFromEnv,
-  getSeoShellConfigFromEnv,
-  withSeoShell,
-} from "@seo-shell/seo-shell/server";
+import { seoShellApp } from "~/lib/seoShell";
 import { sitemapConfig } from "~/lib/sitemapConfig";
 
-export const getServerSideProps = withSeoShell(
-  async () => {
-    return { props: {} };
-  },
+export const getServerSideProps = seoShellApp.withSeoShell(
+  async () => ({ props: {} }),
   {
-    seoShellConfig: getSeoShellConfigFromEnv(),
-    getDefaultSeo: getDefaultSeoFromEnv,
-    options: {
-      ensureSitemaps: true,
-      sitemapConfig,
-    },
+    ensureSitemaps: true,
+    sitemapConfig,
   }
 );
 
@@ -636,22 +608,9 @@ export default function HomePage() {
 ```tsx
 import "~/styles/globals.css";
 import type { AppProps } from "next/app";
-import type { SeoHeadProps, CdnAssets } from "@seo-shell/seo-shell";
 import { SeoShellProvider } from "@seo-shell/seo-shell";
 
-type PagePropsWithSeoShell = {
-  seo?: SeoHeadProps;
-  __seoShell?: {
-    assets: CdnAssets;
-    noIndex: boolean;
-    defaultSeo: SeoHeadProps;
-  };
-};
-
-export default function App({
-  Component,
-  pageProps,
-}: AppProps<PagePropsWithSeoShell>) {
+export default function App({ Component, pageProps }: AppProps) {
   const shell = pageProps.__seoShell;
 
   if (!shell) {
@@ -662,10 +621,7 @@ export default function App({
     <SeoShellProvider
       assets={shell.assets}
       noIndex={shell.noIndex}
-      seo={{
-        ...shell.defaultSeo,
-        ...pageProps.seo,
-      }}
+      seo={{ ...shell.defaultSeo, ...pageProps.seo }}
     >
       <Component {...pageProps} />
     </SeoShellProvider>
@@ -677,12 +633,12 @@ export default function App({
 
 ## API Reference
 
-### `createSeoShell(config)`
+### `createSeoShellApp(config)`
 
-Creates a configured SEO Shell instance.
+Creates a configured SEO Shell app with pre-bound methods.
 
 ```ts
-createSeoShell({
+const seoShellApp = createSeoShellApp({
   cdn: {
     indexUrl: string, // URL to your SPA's index.html
     baseUrl: string, // Base URL for relative assets
@@ -691,12 +647,31 @@ createSeoShell({
   defaults: {
     defaultNoIndex: boolean, // Default noindex behavior (default: true)
   },
+  getDefaultSeo: (ctx) => SeoHeadProps, // Custom default SEO function
 });
+
+// Returns:
+// {
+//   config: SeoShellConfig,
+//   getDefaultSeo: (ctx) => SeoHeadProps,
+//   withSeoShell: (handler, options?) => GetServerSideProps,
+// }
 ```
 
-### `withSeoShell(handler, options)`
+### `seoShellApp.withSeoShell(handler, options?)`
 
-Wraps `getServerSideProps` to inject SEO data.
+Wraps `getServerSideProps` to inject SEO data. No config needed per page.
+
+```ts
+export const getServerSideProps = seoShellApp.withSeoShell(
+  async (ctx) => ({ props: { seo: { title: "Page" } } }),
+  {
+    ensureSitemaps: boolean,
+    sitemapConfig: EnsureSitemapsConfig,
+    getDefaultSeo: (ctx) => SeoHeadProps, // Override default SEO for this page
+  }
+);
+```
 
 ### `sendEvent(name, payload)`
 

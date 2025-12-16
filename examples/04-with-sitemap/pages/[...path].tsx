@@ -1,18 +1,8 @@
-import {
-  getDefaultSeoFromEnv,
-  getSeoShellConfigFromEnv,
-  withSeoShell,
-} from "@seo-shell/seo-shell/server";
+import { seoShellApp } from "../lib/seoShell";
 
-export const getServerSideProps = withSeoShell(
-  async () => {
-    return { props: {} };
-  },
-  {
-    seoShellConfig: getSeoShellConfigFromEnv(),
-    getDefaultSeo: getDefaultSeoFromEnv,
-  }
-);
+export const getServerSideProps = seoShellApp.withSeoShell(async () => ({
+  props: {},
+}));
 
 export default function SpaFallbackPage() {
   return null;

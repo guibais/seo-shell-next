@@ -1,10 +1,8 @@
 export {
-  createSeoShell,
-  getCdnAssetsFromEnv,
-  getSeoShellConfigFromEnv,
-  getSeoShellDefaultsFromEnv,
+  getCdnAssets,
   getPageAssets,
   type SeoShellConfig,
+  type SeoShellCdnConfig,
   type SeoShellDefaults,
   type PageAssetsResult,
 } from "./runtime";
@@ -59,7 +57,15 @@ export {
   type WithSeoShellParams,
 } from "./withSeoShell";
 
-export { getDefaultSeoFromEnv, getCanonicalUrlFromCtx } from "./defaultNext";
+export {
+  createSeoShellApp,
+  type SeoShellApp,
+  type SeoShellAppConfig,
+  type SeoShellInjectedProps as SeoShellAppInjectedProps,
+  type WithSeoShellOptions as SeoShellAppWithOptions,
+} from "./createSeoShellApp";
+
+export { getBaseUrlFromRequest, getCanonicalUrlFromCtx } from "./defaultNext";
 
 export { sendEvent, watchEvent, createEventBridge } from "./events";
 export type { SeoShellEventPayload, SeoShellEventHandler } from "./events";

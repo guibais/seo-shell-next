@@ -1,9 +1,9 @@
 import type { GetServerSidePropsContext } from "next";
-import { withSeoShell, createEventBridge } from "@seo-shell/seo-shell/server";
-import { seoShell } from "../../lib/seoShell";
+import { createEventBridge } from "@seo-shell/seo-shell/server";
+import { seoShellApp } from "../../lib/seoShell";
 import { fetchProfessional } from "../../lib/api";
 
-export const getServerSideProps = withSeoShell(
+export const getServerSideProps = seoShellApp.withSeoShell(
   async (ctx: GetServerSidePropsContext) => {
     const slug = ctx.params?.slug as string;
     const professional = await fetchProfessional(slug);
@@ -25,8 +25,7 @@ export const getServerSideProps = withSeoShell(
         __events: events.pendingEvents,
       },
     };
-  },
-  { seoShell }
+  }
 );
 
 export default function ProfessionalPage() {
