@@ -1,5 +1,10 @@
 import fs from "node:fs";
 import path from "node:path";
+import {
+  detectDistDirectory,
+  type DistDetectorOptions,
+  type DistDetectorResult,
+} from "./distDetector";
 
 export type ExpoWebAssetsManifest = {
   cssHrefs: string[];
@@ -7,9 +12,21 @@ export type ExpoWebAssetsManifest = {
   faviconHref?: string;
 };
 
+export type WebAssetsManifest = ExpoWebAssetsManifest;
+
 export type ExpoWebAssetsManifestBuildInput = {
-  distPath: string;
+  distPath?: string;
   indexFileName?: string;
+  projectPath?: string;
+  customDistPath?: string;
+  expectHashedAssets?: boolean;
+};
+
+export type WebAssetsManifestBuildInput = ExpoWebAssetsManifestBuildInput;
+
+export type WebAssetsManifestBuildResult = {
+  manifest: WebAssetsManifest;
+  detection: DistDetectorResult;
 };
 
 export type ExpoWebAssetsManifestWriteInput = {
@@ -52,24 +69,44 @@ export const extractExpoWebAssetsManifestFromHtml = (
   };
 };
 
-export const generateExpoWebAssetsManifestFromBuild = ({
-  distPath,
-  indexFileName,
-}: ExpoWebAssetsManifestBuildInput): ExpoWebAssetsManifest => {
-  const resolvedDistPath = path.resolve(distPath);
-  const resolvedIndexFileName = (indexFileName || "index.html").trim();
-  const indexPath = path.join(resolvedDistPath, resolvedIndexFileName);
+export const generateExpoWebAssetsManifestFromBuild = (
+  input: ExpoWebAssetsManifestBuildInput
+): ExpoWebAssetsManifest => {
+  const result = generateWebAssetsManifestFromBuild(input);
+  return result.manifest;
+};
 
-  if (!fs.existsSync(resolvedDistPath)) {
-    throw new Error(`dist não encontrado em: ${resolvedDistPath}`);
+export const generateWebAssetsManifestFromBuild = (
+  input: WebAssetsManifestBuildInput
+): WebAssetsManifestBuildResult => {
+  const detectorOptions: DistDetectorOptions = {
+    projectPath: input.projectPath,
+    customDistPath: input.customDistPath ?? input.distPath,
+    expectHashedAssets: input.expectHashedAssets,
+  };
+
+  const detection = detectDistDirectory(detectorOptions);
+  if (!detection) {
+    throw new Error(
+      `Dist directory not found. Searched common paths like dist, build, out, web-build. ` +
+        `Use customDistPath option to specify your dist directory.`
+    );
   }
 
+  const indexFileName = input.indexFileName ?? "index.html";
+  const indexPath = path.join(detection.distPath, indexFileName.trim());
+
   if (!fs.existsSync(indexPath)) {
-    throw new Error(`index.html não encontrado em: ${indexPath}`);
+    throw new Error(`index.html not found at: ${indexPath}`);
   }
 
   const html = fs.readFileSync(indexPath, "utf8");
-  return extractExpoWebAssetsManifestFromHtml(html);
+  const manifest = extractExpoWebAssetsManifestFromHtml(html);
+
+  return {
+    manifest,
+    detection,
+  };
 };
 
 export const writeExpoWebAssetsManifest = ({
@@ -90,30 +127,46 @@ export const writeExpoWebAssetsManifest = ({
   };
 };
 
-export const writeExpoWebAssetsManifestFromBuild = ({
-  distPath,
-  indexFileName,
-  outputDir,
-  manifestFileName,
-}: ExpoWebAssetsManifestBuildInput & {
-  outputDir: string;
-  manifestFileName?: string;
-}): ExpoWebAssetsManifestWriteResult & {
+export type WriteWebAssetsManifestFromBuildInput =
+  WebAssetsManifestBuildInput & {
+    outputDir?: string;
+    manifestFileName?: string;
+  };
+
+export type WriteWebAssetsManifestFromBuildResult = {
+  outputPath: string;
+  manifest: WebAssetsManifest;
+  detection: DistDetectorResult;
+};
+
+export const writeExpoWebAssetsManifestFromBuild = (
+  input: WriteWebAssetsManifestFromBuildInput
+): ExpoWebAssetsManifestWriteResult & {
   manifest: ExpoWebAssetsManifest;
 } => {
-  const manifest = generateExpoWebAssetsManifestFromBuild({
-    distPath,
-    indexFileName,
-  });
+  const result = writeWebAssetsManifestFromBuild(input);
+  return {
+    outputPath: result.outputPath,
+    manifest: result.manifest,
+  };
+};
+
+export const writeWebAssetsManifestFromBuild = (
+  input: WriteWebAssetsManifestFromBuildInput
+): WriteWebAssetsManifestFromBuildResult => {
+  const { manifest, detection } = generateWebAssetsManifestFromBuild(input);
+
+  const outputDir = input.outputDir ?? detection.distPath;
 
   const { outputPath } = writeExpoWebAssetsManifest({
     outputDir,
-    manifestFileName,
+    manifestFileName: input.manifestFileName,
     manifest,
   });
 
   return {
     outputPath,
     manifest,
+    detection,
   };
 };

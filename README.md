@@ -35,6 +35,7 @@ Your SPA (unchanged) + SEO Shell = Google-friendly app
 - [Requirements](#requirements)
 - [Installation](#installation)
 - [Quick Start](#quick-start)
+- [Smart Dist Detection](#smart-dist-detection)
 - [Catch-All Route (Important)](#catch-all-route-important)
 - [Next.js Configuration](#nextjs-configuration)
 - [Web Events (Optional)](#web-events-optional)
@@ -232,6 +233,102 @@ export default function App({ Component, pageProps }) {
 ```
 
 That's it! Your SPA now has full SEO support.
+
+---
+
+## Smart Dist Detection
+
+SEO Shell automatically detects your SPA's build output directory across multiple frameworks. It searches common dist paths and identifies the framework being used.
+
+### Supported Frameworks
+
+- **Expo** - `dist`, `web-build`
+- **Vite** - `dist`, `build`
+- **Create React App** - `build`
+- **Next.js** - `.next`, `out`
+- **Nuxt** - `.output/public`, `dist`, `.nuxt`
+- **Angular** - `dist`, `dist/browser`
+- **Vue CLI** - `dist`
+- **Parcel** - `dist`, `build`
+- **Remix** - `public/build`, `build/client`
+- **Astro** - `dist`
+- **Gatsby** - `public`
+- **SvelteKit** - `build`, `dist`, `public/build`
+- **Webpack/Rollup/esbuild** - `dist`, `build`, `out`
+
+### Auto-Detection
+
+The detector reads your `package.json` to identify the framework and searches the appropriate directories:
+
+```ts
+import { detectDistDirectory } from "@seo-shell/seo-shell/server";
+
+const result = detectDistDirectory();
+
+console.log(result);
+// {
+//   distPath: "/path/to/your/project/dist",
+//   framework: "vite",
+//   indexPath: "/path/to/your/project/dist/index.html",
+//   hasHashedAssets: true
+// }
+```
+
+### Custom Dist Path
+
+If your dist directory is in a non-standard location, specify it explicitly:
+
+```ts
+import { detectDistDirectory } from "@seo-shell/seo-shell/server";
+
+const result = detectDistDirectory({
+  customDistPath: "./my-custom-output",
+});
+```
+
+### Hashed Assets Detection
+
+By default, SEO Shell detects if your assets have content hashes (e.g., `main.a1b2c3d4.js`). You can explicitly set expectations:
+
+```ts
+import { detectDistDirectory } from "@seo-shell/seo-shell/server";
+
+const result = detectDistDirectory({
+  expectHashedAssets: true,
+});
+
+if (!result.hasHashedAssets) {
+  console.warn("Assets are not hashed - caching may not work optimally");
+}
+```
+
+### Generate Web Assets Manifest
+
+Generate a manifest file from your build output with smart detection:
+
+```ts
+import { writeWebAssetsManifestFromBuild } from "@seo-shell/seo-shell/server";
+
+const result = writeWebAssetsManifestFromBuild({
+  projectPath: "./my-spa",
+  expectHashedAssets: true,
+});
+
+console.log(result);
+// {
+//   outputPath: "/path/to/dist/web-assets.json",
+//   manifest: { cssHrefs: [...], jsSrcs: [...], faviconHref: "..." },
+//   detection: { distPath: "...", framework: "expo", hasHashedAssets: true }
+// }
+```
+
+### Options
+
+| Option               | Type      | Default         | Description                            |
+| -------------------- | --------- | --------------- | -------------------------------------- |
+| `projectPath`        | `string`  | `process.cwd()` | Root path of your project              |
+| `customDistPath`     | `string`  | auto-detected   | Custom path to your dist directory     |
+| `expectHashedAssets` | `boolean` | `undefined`     | Warn if hash expectation doesn't match |
 
 ---
 
@@ -612,6 +709,48 @@ Listen for events in your SPA. Returns an unsubscribe function.
 ### `createEventBridge()`
 
 Queue events server-side to be sent when the page loads.
+
+### `detectDistDirectory(options?)`
+
+Detects the dist directory for your SPA build.
+
+```ts
+detectDistDirectory({
+  projectPath: string, // Root path of your project (default: cwd)
+  customDistPath: string, // Custom dist path (skips auto-detection)
+  expectHashedAssets: boolean, // Warn if hash expectation doesn't match
+});
+// Returns: DistDetectorResult | null
+// {
+//   distPath: string,
+//   framework: FrameworkType,
+//   indexPath: string,
+//   hasHashedAssets: boolean
+// }
+```
+
+### `getDistPath(options?)`
+
+Returns the dist path or throws if not found.
+
+### `getSupportedFrameworks()`
+
+Returns list of supported framework types.
+
+### `writeWebAssetsManifestFromBuild(options)`
+
+Generates and writes a web assets manifest from your build.
+
+```ts
+writeWebAssetsManifestFromBuild({
+  projectPath: string,
+  customDistPath: string,
+  expectHashedAssets: boolean,
+  outputDir: string, // Where to write manifest (default: distPath)
+  manifestFileName: string, // Manifest filename (default: "web-assets.json")
+  indexFileName: string, // Index file to parse (default: "index.html")
+});
+```
 
 ---
 

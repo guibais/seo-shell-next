@@ -12,13 +12,30 @@ export {
 export {
   extractExpoWebAssetsManifestFromHtml,
   generateExpoWebAssetsManifestFromBuild,
+  generateWebAssetsManifestFromBuild,
   writeExpoWebAssetsManifest,
   writeExpoWebAssetsManifestFromBuild,
+  writeWebAssetsManifestFromBuild,
   type ExpoWebAssetsManifest,
   type ExpoWebAssetsManifestBuildInput,
   type ExpoWebAssetsManifestWriteInput,
   type ExpoWebAssetsManifestWriteResult,
+  type WebAssetsManifest,
+  type WebAssetsManifestBuildInput,
+  type WebAssetsManifestBuildResult,
+  type WriteWebAssetsManifestFromBuildInput,
+  type WriteWebAssetsManifestFromBuildResult,
 } from "./expoWebAssetsManifest";
+
+export {
+  detectDistDirectory,
+  getDistPath,
+  getSupportedFrameworks,
+  getCommonDistPaths,
+  type FrameworkType,
+  type DistDetectorResult,
+  type DistDetectorOptions,
+} from "./distDetector";
 
 export {
   generateSitemaps,
