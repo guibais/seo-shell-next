@@ -10,7 +10,7 @@ export type SeoShellDocumentProps = {
 
 const defaultStyles = {
   expoReset:
-    "html,body{height:100%;}body{overflow:hidden;}#__next{height:100%;display:flex;flex:1;}#root{display:flex;height:100%;flex:1;}",
+    "html,body{height:100%!important;width:100%!important;margin:0!important;padding:0!important;}body{overflow:auto!important;}#__next{height:100%!important;width:100%!important;min-height:100%!important;display:flex!important;flex:1!important;}#root{height:100%!important;width:100%!important;min-height:100%!important;display:flex!important;flex:1!important;flex-direction:column!important;}",
   ssrShellHide:
     "#ssr-shell{position:absolute!important;left:-10000px!important;top:auto!important;width:1px!important;height:1px!important;overflow:hidden!important;opacity:0!important;pointer-events:none!important;}",
 };

@@ -6,6 +6,8 @@
 
 > **Tested with:** Expo Web, Vite (React/Angular). Should be compatible with most modern bundlers (CRA, Parcel, Webpack, etc.).
 
+Your SPA can be Angular, Vue, Svelte, React, or anything that outputs static files. SEO Shell does not require your SPA codebase to use Next.js.
+
 ## The Problem
 
 You built your app with Expo, Vite, Ionic, or Create React App. It works great. But Google can't see it.
@@ -26,6 +28,7 @@ Traditional solutions say: "Rewrite everything in Next.js." But:
 - ✅ **Sitemaps** — auto-generated
 - ✅ **Canonical URLs** — no duplicate content
 - ✅ **Zero changes to your SPA** — it runs exactly as before
+- ✅ **Any dist/build output** — the SPA build folder can be whatever your framework produces
 
 ```
 Your SPA (unchanged) + SEO Shell = Google-friendly app
@@ -38,6 +41,7 @@ Your SPA (unchanged) + SEO Shell = Google-friendly app
 - [The Problem](#the-problem)
 - [The Solution](#the-solution)
 - [How It Works](#how-it-works)
+- [What Runs Where](#what-runs-where)
 - [Architecture](#architecture)
 - [Requirements](#requirements)
 - [Important Requirements](#important-requirements)
@@ -62,6 +66,27 @@ Your SPA (unchanged) + SEO Shell = Google-friendly app
 5. **Users and crawlers** see a fully SEO-optimized page that boots your SPA normally
 
 The user never knows Next.js is involved. Your SPA runs exactly as before.
+
+---
+
+## What Runs Where
+
+SEO Shell is designed to be plug-and-play, but it helps to think in two clearly separated parts.
+
+- **Your SPA (Angular/Vue/React/Svelte/etc.)**
+
+  - You keep your SPA exactly as it is.
+  - You build it as static files (your dist/build folder).
+  - You host those files on static storage (R2/S3/etc.).
+  - SEO Shell does not require your SPA to use Next.js, React, or `getServerSideProps`.
+  - There is no conflict with an Angular app, because Angular is not running inside Next.js. Next.js only serves the generated static files.
+
+- **Your Next.js “SEO host” app**
+  - This is a small Next.js app whose job is to serve your SPA HTML and inject SEO server-side.
+  - This is where `getServerSideProps`, `pages/[...path].tsx`, and `createSeoShellApp` live.
+  - This app is the thing crawlers hit.
+
+In other words: `getServerSideProps` is not a requirement for your SPA. It is only used in the Next.js wrapper app.
 
 ---
 
@@ -207,6 +232,8 @@ npm i @seo-shell/seo-shell@next
 ```
 
 ## Quick Start
+
+Everything in this section is implemented in your Next.js “SEO host” app (not in your SPA project).
 
 ### 1. Configure the shell (once)
 
@@ -399,25 +426,26 @@ export default function SpaFallbackPage() {
 ### `next.config.js`
 
 ```js
-const nextConfig = {
-  reactStrictMode: true,
-  transpilePackages: ["@seo-shell/seo-shell"],
-  async rewrites() {
-    return [
-      {
-        source: "/sitemaps/cities/:page.xml",
-        destination: "/seo/cities-:page.xml",
-      },
-      {
-        source: "/sitemaps/professionals/:page.xml",
-        destination: "/seo/professionals-:page.xml",
-      },
-    ];
+import { withSeoShellSitemap } from "@seo-shell/seo-shell/server";
+
+const nextConfig = withSeoShellSitemap(
+  {
+    reactStrictMode: true,
+    transpilePackages: ["@seo-shell/seo-shell"],
   },
-};
+  {
+    publicSitemapSubdir: "/seo",
+    sitemapsRouteBasePath: "/sitemaps",
+    sitemapIndexRoute: "/sitemap.xml",
+    sitemapIndexPath: "/seo/sitemap.xml",
+    groups: ["cities", "professionals"],
+  }
+);
 
 export default nextConfig;
 ```
+
+If you prefer manual control, see the [Sitemap](#sitemap) section.
 
 ### `pages/_document.tsx`
 
@@ -437,11 +465,7 @@ Or customize it:
 import { SeoShellDocument } from "@seo-shell/seo-shell";
 
 export default function Document() {
-  return (
-    <SeoShellDocument lang="pt-BR">
-      {/* Additional head elements */}
-    </SeoShellDocument>
-  );
+  return <SeoShellDocument lang="pt-BR"></SeoShellDocument>;
 }
 ```
 

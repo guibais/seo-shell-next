@@ -8,6 +8,7 @@ export type SeoShellProviderProps = {
   assets: CdnAssets;
   noIndex: boolean;
   seo?: SeoHeadProps;
+  injectStyles?: boolean;
   children: React.ReactNode;
 };
 
@@ -15,6 +16,7 @@ export const SeoShellProvider = ({
   assets,
   noIndex,
   seo,
+  injectStyles = true,
   children,
 }: SeoShellProviderProps) => {
   return (
@@ -24,6 +26,7 @@ export const SeoShellProvider = ({
         noIndex,
         ...seo,
       }}
+      injectStyles={injectStyles}
     >
       {children}
     </CdnAppBootstrap>

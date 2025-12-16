@@ -9,12 +9,14 @@ import type { SeoHeadProps } from "./seo/SeoHead";
 export type CdnAppBootstrapProps = {
   assets: CdnAssets;
   seo?: SeoHeadProps;
+  injectStyles?: boolean;
   children?: React.ReactNode;
 };
 
 export const CdnAppBootstrap = ({
   assets,
   seo,
+  injectStyles = true,
   children,
 }: CdnAppBootstrapProps) => {
   const cssHrefs = assets?.cssHrefs ?? [];
@@ -26,9 +28,11 @@ export const CdnAppBootstrap = ({
         {assets?.faviconHref ? (
           <link rel="icon" href={assets.faviconHref} />
         ) : null}
-        {cssHrefs.map((href: string) => (
-          <link key={href} rel="stylesheet" href={href} />
-        ))}
+        {injectStyles
+          ? cssHrefs.map((href: string) => (
+              <link key={href} rel="stylesheet" href={href} />
+            ))
+          : null}
       </Head>
 
       {seo && <SeoHead {...seo} />}
