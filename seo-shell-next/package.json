@@ -21,6 +21,9 @@
   ],
   "scripts": {
     "build": "tsup src/index.ts src/server.ts --format esm,cjs --dts --out-dir dist --clean",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "prepublishOnly": "npm run build"
   },
   "publishConfig": {
@@ -33,6 +36,10 @@
     "react-dom": "*"
   },
   "devDependencies": {
+    "@testing-library/react": "^16.0.0",
+    "@vitest/coverage-v8": "^2.1.0",
+    "happy-dom": "^15.7.0",
+    "vitest": "^2.1.0",
     "@semantic-release/commit-analyzer": "^13.0.1",
     "@semantic-release/git": "^10.0.1",
     "@semantic-release/github": "^11.0.6",

@@ -1,5 +1,7 @@
 # @seo-shell/seo-shell
 
+**Portuguese / Português:** see [Português](#português).
+
 **Use your favorite SPA framework. Get Next.js-level SEO.**
 
 > 🎯 For developers who already have a SPA (Expo, Vite, CRA, etc.) and want to be found on Google — without rewriting their entire app.
@@ -1005,3 +1007,21 @@ writeWebAssetsManifestFromBuild({
 ## License
 
 MIT
+
+---
+
+## Português
+
+Essa lib faz o Next.js funcionar como uma **casca (shell)** em cima da sua aplicação.
+
+Você **não precisa reescrever sua aplicação em Next.js**.
+
+Você só precisa:
+
+- **Hospedar o Next.js** (como app SSR)
+- **Apontar ele para sua aplicação** (SPA) hospedada como arquivos estáticos (CDN / storage)
+- **Configurar o SEO como desejar** (title, meta, OG, JSON-LD, canonical, sitemap etc.)
+
+O Next.js intercepta as requisições, busca o `index.html` da sua SPA (no CDN), injeta SEO server-side e entrega a página já otimizada para crawlers. Para o usuário final, sua SPA roda normal.
+
+Eu fiz isso com o intuito principal de **atribuir SEO SSR para o Expo Web**, mantendo a aplicação como SPA e usando o Next apenas como camada de SEO/SSR.
