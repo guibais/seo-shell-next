@@ -8,6 +8,28 @@
 
 ---
 
+## ⚠️ Important Requirements
+
+Before you start, make sure you understand these **required** steps:
+
+1. **Create `pages/[...path].tsx`** — Required to avoid 404 errors on SPA routes. [See details](#catch-all-route-required)
+
+2. **Configure once in `lib/seoShell.ts`** — All config is centralized:
+
+   ```ts
+   export const seoShellApp = createSeoShellApp({
+     cdn: {
+       indexUrl: "https://cdn.example.com/app/index.html",
+       baseUrl: "https://cdn.example.com/app",
+     },
+     defaults: { seo: { title: "My App", description: "..." } },
+   });
+   ```
+
+3. **Add `SeoShellProvider` in `_app.tsx`** — Wraps your app with SEO capabilities. [See details](#3-add-the-provider-in-_apptsx)
+
+---
+
 ## The Problem
 
 You built your app with Expo, Vite, or Create React App. It works great. But Google can't see it.
@@ -32,13 +54,14 @@ Your SPA (unchanged) + SEO Shell = Google-friendly app
 
 ## Table of Contents
 
+- [⚠️ Important Requirements](#️-important-requirements)
 - [How It Works](#how-it-works)
 - [Architecture](#architecture)
 - [Requirements](#requirements)
 - [Installation](#installation)
 - [Quick Start](#quick-start)
 - [Smart Dist Detection](#smart-dist-detection)
-- [Catch-All Route (Important)](#catch-all-route-important)
+- [Catch-All Route (Required)](#catch-all-route-required)
 - [Next.js Configuration](#nextjs-configuration)
 - [Web Events (Optional)](#web-events-optional)
 - [Real-World Example](#real-world-example)
@@ -332,25 +355,36 @@ console.log(result);
 
 ---
 
-## Catch-All Route (Important)
+## Catch-All Route (Required)
 
-Your SPA likely has client-side routing (React Router, Expo Router, etc.). To prevent Next.js from returning 404 for routes that only exist in your SPA, you need a **catch-all route**.
+> ⚠️ **This file is required!** Without it, any route not explicitly defined in Next.js will return a 404 error.
 
-Create `pages/[...path].tsx`:
+Your SPA has its own client-side routing (React Router, Expo Router, etc.). Next.js doesn't know about these routes. Without a catch-all route, users navigating directly to `/profile` or `/settings` will see a 404 page.
+
+**Create `pages/[...path].tsx`:**
 
 ```tsx
-import { seoShellApp } from "../lib/seoShell";
+import { seoShellApp } from "~/lib/seoShell";
 
-export const getServerSideProps = seoShellApp.withSeoShell(async () => ({
-  props: {},
-}));
+export const getServerSideProps = seoShellApp.withSeoShell(async () => {
+  return { props: {} };
+});
 
 export default function SpaFallbackPage() {
   return null;
 }
 ```
 
-This route catches all paths that don't have a specific Next.js page and serves your SPA with default SEO.
+**What this does:**
+
+- Catches ALL routes not explicitly defined in Next.js
+- Serves your SPA with the default SEO configured in `createSeoShellApp`
+- Allows your SPA's client-side router to handle the actual navigation
+
+**Example:** If your SPA has routes like `/profile`, `/settings`, `/dashboard`:
+
+- Without `[...path].tsx`: User gets 404
+- With `[...path].tsx`: User sees your SPA with default SEO tags
 
 ---
 
