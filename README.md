@@ -1012,16 +1012,662 @@ MIT
 
 ## Português
 
+**Use seu framework SPA favorito. Ganhe SEO nível Next.js.**
+
+Para quem já tem uma SPA (Expo, Vite, CRA, etc.) e quer ser encontrado no Google sem reescrever o app inteiro.
+
+Testado com: Expo Web, Vite (React/Angular). Deve funcionar com a maioria dos bundlers modernos (CRA, Parcel, Webpack, etc.).
+
+Sua SPA pode ser Angular, Vue, Svelte, React ou qualquer coisa que gere arquivos estáticos. O SEO Shell não exige que sua SPA use Next.js.
+
+Eu fiz isso com o intuito principal de **atribuir SEO SSR para o Expo Web**, mantendo a aplicação como SPA e usando o Next apenas como camada de SEO/SSR.
+
+### A ideia principal
+
 Essa lib faz o Next.js funcionar como uma **casca (shell)** em cima da sua aplicação.
 
-Você **não precisa reescrever sua aplicação em Next.js**.
+Você não precisa reescrever sua aplicação em Next.js.
 
 Você só precisa:
 
-- **Hospedar o Next.js** (como app SSR)
-- **Apontar ele para sua aplicação** (SPA) hospedada como arquivos estáticos (CDN / storage)
-- **Configurar o SEO como desejar** (title, meta, OG, JSON-LD, canonical, sitemap etc.)
+- Hospedar o Next.js (como app SSR)
+- Apontar ele para sua aplicação (SPA) hospedada como arquivos estáticos (CDN / storage)
+- Configurar o SEO como desejar (title, meta, OG, JSON-LD, canonical, sitemap etc.)
 
 O Next.js intercepta as requisições, busca o `index.html` da sua SPA (no CDN), injeta SEO server-side e entrega a página já otimizada para crawlers. Para o usuário final, sua SPA roda normal.
 
-Eu fiz isso com o intuito principal de **atribuir SEO SSR para o Expo Web**, mantendo a aplicação como SPA e usando o Next apenas como camada de SEO/SSR.
+---
+
+## Índice (Português)
+
+- [O Problema](#o-problema)
+- [A Solução](#a-solução)
+- [Como Funciona](#como-funciona)
+- [O Que Roda Onde](#o-que-roda-onde)
+- [Arquitetura](#arquitetura-1)
+- [Requisitos](#requisitos-1)
+- [Requisitos Importantes](#requisitos-importantes)
+- [Instalação](#instalação)
+- [Quick Start](#quick-start-1)
+- [Rota Catch-All (Obrigatória)](#rota-catch-all-obrigatória)
+- [Comunicação em Duas Vias (Opcional)](#comunicação-em-duas-vias-opcional)
+- [Detecção Inteligente do Dist](#detecção-inteligente-do-dist)
+- [Configuração do Next.js](#configuração-do-nextjs)
+- [Sitemap](#sitemap-1)
+- [Exemplo Real](#exemplo-real)
+- [Referência de API](#referência-de-api)
+
+---
+
+## O Problema
+
+Você construiu seu app com Expo, Vite, Ionic ou Create React App. Funciona muito bem. Mas o Google não consegue enxergar direito.
+
+As soluções tradicionais falam: "Reescreva tudo em Next.js". Só que:
+
+- Você já tem uma SPA funcionando e reescrever leva meses
+- Next.js pode ser overkill, você só quer SEO, não uma migração de framework
+- Você está construindo um app mobile-first: Expo Web ou Ionic são só o “web” do seu app
+- Seu time conhece React/Vue/Angular, não necessariamente Next.js
+
+## A Solução
+
+O SEO Shell adiciona SEO na sua SPA existente sem mudar o código dela:
+
+- Títulos, descrições e Open Graph dinâmicos por página
+- JSON-LD (dados estruturados)
+- Sitemaps gerados automaticamente
+- Canonical URLs para evitar conteúdo duplicado
+- Zero mudanças na sua SPA
+- Funciona com qualquer pasta de build/dist
+
+```
+Sua SPA (sem mudar) + SEO Shell = App amigável para o Google
+```
+
+---
+
+## Como Funciona
+
+1. Sua SPA continua exatamente como é
+2. Você faz upload do build da sua SPA para um storage/CDN (Cloudflare R2, AWS S3 etc.)
+3. Você faz deploy de um app Next.js que usa o SEO Shell
+4. O Next.js intercepta as requisições, busca sua SPA do CDN, injeta tags de SEO e entrega
+5. Usuários e crawlers recebem uma página já otimizada e a SPA sobe normalmente
+
+O usuário final não percebe que existe Next.js envolvido. Sua SPA roda como sempre.
+
+---
+
+## O Que Roda Onde
+
+O SEO Shell é plug-and-play, mas ajuda pensar em duas partes separadas.
+
+- Sua SPA (Angular/Vue/React/Svelte/etc.)
+
+  - Você mantém sua SPA como está.
+  - Você builda como arquivos estáticos (sua pasta dist/build).
+  - Você hospeda esses arquivos em um storage/CDN (R2/S3/etc.).
+  - O SEO Shell não exige Next.js, React ou `getServerSideProps` dentro do projeto da SPA.
+  - Não existe conflito com Angular/Vue etc., porque o Next só serve os arquivos gerados.
+
+- Seu app Next.js como “host de SEO”
+  - Um app Next pequeno que serve o HTML da sua SPA e injeta SEO via SSR.
+  - É onde `getServerSideProps`, `pages/[...path].tsx` e `createSeoShellApp` vivem.
+  - É isso que os crawlers acessam.
+
+Em outras palavras: `getServerSideProps` não é requisito da sua SPA. Ele só existe no app Next.js wrapper.
+
+---
+
+## Arquitetura
+
+Inspirado em microserviços: cada parte faz uma coisa bem.
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                              SUA INFRAESTRUTURA                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│   ┌─────────────────────────┐         ┌─────────────────────────────────┐   │
+│   │  Storage de Arquivos     │         │      Servidor Next.js SSR       │   │
+│   │   (CDN / Object Store)   │         │   (Serverless ou Servidor)      │   │
+│   ├─────────────────────────┤         ├─────────────────────────────────┤   │
+│   │                         │         │                                 │   │
+│   │  • Cloudflare R2        │◄────────│  • Vercel (SSR)                  │   │
+│   │  • AWS S3               │  fetch  │  • AWS Lambda                    │   │
+│   │  • Google Cloud Storage │ index   │  • Docker container              │   │
+│   │  • Qualquer host estático│ .html  │  • Qualquer servidor Node.js     │   │
+│   │                         │         │                                 │   │
+│   │  Guarda o build da SPA  │         │  Injeta SEO + serve a SPA        │   │
+│   │  (index.html, JS, CSS)  │         │  (title, meta, JSON-LD, sitemap) │   │
+│   │                         │         │                                 │   │
+│   └─────────────────────────┘         └─────────────────────────────────┘   │
+│              ▲                                       ▲                      │
+│              │                                       │                      │
+│              │         Usuário nunca acessa          │                      │
+│              │         o CDN diretamente             │                      │
+│              │                                       │                      │
+│              └───────────────────────────────────────┘                      │
+│                                 │                                           │
+│                                 ▼                                           │
+│                    ┌─────────────────────────┐                              │
+│                    │   Navegador do Usuário  │                              │
+│                    │  (recebe SEO + SPA)     │                              │
+│                    └─────────────────────────┘                              │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Por que funciona
+
+1. Sua SPA é buildada normalmente e enviada para um storage/CDN (arquivos estáticos)
+2. O Next.js roda como servidor SSR e intercepta as requisições
+3. O Next.js busca o `index.html` no CDN, injeta SEO e serve para o usuário
+4. O usuário recebe a página otimizada e a SPA sobe normalmente
+
+---
+
+## Requisitos
+
+### Sua SPA (dist)
+
+Precisa estar hospedada em um storage/CDN de arquivos estáticos (não uma plataforma que “interpreta” HTML):
+
+- Cloudflare R2
+- AWS S3
+- Google Cloud Storage
+- DigitalOcean Spaces
+- Qualquer servidor de arquivos estáticos
+
+### Servidor Next.js
+
+Precisa rodar em modo SSR (não static export):
+
+- Vercel (SSR padrão)
+- AWS Lambda / Serverless
+- Docker
+- Qualquer servidor Node.js
+- Não: `next export`
+
+---
+
+## Requisitos Importantes
+
+1. Criar `pages/[...path].tsx` para não dar 404 em rotas da SPA
+
+2. Centralizar config em `lib/seoShell.ts`:
+
+```ts
+export const seoShellApp = createSeoShellApp({
+  cdn: {
+    indexUrl: "https://cdn.example.com/app/index.html",
+    baseUrl: "https://cdn.example.com/app",
+  },
+  defaults: { seo: { title: "My App", description: "..." } },
+});
+```
+
+3. Adicionar `SeoShellProvider` no `_app.tsx`
+
+---
+
+## Instalação
+
+```bash
+npm i @seo-shell/seo-shell@next
+```
+
+## Quick Start
+
+Tudo nessa seção é implementado no seu app Next.js “host de SEO” (não no projeto da sua SPA).
+
+### 1. Configure o shell (uma vez)
+
+```ts
+import { createSeoShellApp } from "@seo-shell/seo-shell/server";
+
+export const seoShellApp = createSeoShellApp({
+  cdn: {
+    indexUrl: "https://cdn.example.com/app/index.html",
+    baseUrl: "https://cdn.example.com/app",
+  },
+});
+```
+
+### 2. Envolva suas páginas
+
+```tsx
+import { seoShellApp } from "../lib/seoShell";
+
+export const getServerSideProps = seoShellApp.withSeoShell(async () => ({
+  props: {
+    seo: {
+      title: "Home",
+      description: "Welcome to my app",
+    },
+  },
+}));
+
+export default function Page() {
+  return null;
+}
+```
+
+### 3. Adicione o provider no `_app.tsx`
+
+```tsx
+import { SeoShellProvider } from "@seo-shell/seo-shell";
+
+export default function App({ Component, pageProps }) {
+  const shell = pageProps.__seoShell;
+  if (!shell) return <Component {...pageProps} />;
+
+  return (
+    <SeoShellProvider
+      assets={shell.assets}
+      noIndex={shell.noIndex}
+      seo={{ ...shell.defaultSeo, ...pageProps.seo }}
+    >
+      <Component {...pageProps} />
+    </SeoShellProvider>
+  );
+}
+```
+
+---
+
+## Rota Catch-All (Obrigatória)
+
+Esse arquivo é obrigatório. Sem ele, qualquer rota que não exista no Next vai retornar 404.
+
+Crie `pages/[...path].tsx`:
+
+```tsx
+import { seoShellApp } from "~/lib/seoShell";
+
+export const getServerSideProps = seoShellApp.withSeoShell(async () => {
+  return { props: {} };
+});
+
+export default function SpaFallbackPage() {
+  return null;
+}
+```
+
+---
+
+## Comunicação em Duas Vias (Opcional)
+
+O SEO Shell inclui uma camada de eventos baseada em `CustomEvent` para comunicar:
+
+- Next.js -> SPA (reaproveitar dados buscados no SSR)
+- SPA -> Next.js (escutar eventos no client do Next)
+
+Também emite eventos de ciclo de vida:
+
+- `seo-shell:ready`
+- `seo-shell:hydrated`
+
+### Instale `@seo-shell/events` no seu projeto SPA
+
+```bash
+npm i @seo-shell/events@next
+```
+
+### Next.js -> SPA
+
+No Next.js, colete eventos no SSR:
+
+```tsx
+import { createEventBridge } from "@seo-shell/seo-shell/server";
+import { seoShellApp } from "~/lib/seoShell";
+
+export const getServerSideProps = seoShellApp.withSeoShell(async () => {
+  const professional = await fetchProfessional("john-doe");
+  const events = createEventBridge();
+  events.queue("professional", professional);
+
+  return {
+    props: {
+      seo: {
+        title: professional.name,
+        description: professional.bio,
+      },
+      __events: events.pendingEvents,
+    },
+  };
+});
+```
+
+Depois dispare os eventos no client (por exemplo no `_app.tsx`):
+
+```tsx
+import { sendEvent } from "@seo-shell/seo-shell";
+import { useEffect } from "react";
+
+export default function App({ Component, pageProps }) {
+  useEffect(() => {
+    const events = pageProps.__events ?? [];
+    events.forEach((e) => sendEvent(e.name, e.payload));
+  }, [pageProps.__events]);
+
+  return <Component {...pageProps} />;
+}
+```
+
+Na sua SPA, escute:
+
+```ts
+import { watchEvent } from "@seo-shell/events";
+
+watchEvent("professional", (professional) => {
+  console.log("Received:", professional);
+});
+```
+
+### SPA -> Next.js
+
+Na sua SPA, envie eventos:
+
+```ts
+import { sendEvent } from "@seo-shell/events";
+
+sendEvent("spa:navigation", { path: "/profile" });
+```
+
+No Next.js (client-side), escute:
+
+```ts
+import { watchEvent } from "@seo-shell/seo-shell";
+import { useEffect } from "react";
+
+export const useSpaNavigationEvents = () => {
+  useEffect(() => {
+    return watchEvent("spa:navigation", (payload) => {
+      console.log("SPA navigation:", payload);
+    });
+  }, []);
+};
+```
+
+---
+
+## Detecção Inteligente do Dist
+
+O SEO Shell tenta detectar automaticamente a pasta de build da sua SPA.
+
+### Frameworks suportados
+
+- Expo
+- Vite
+- Create React App
+- Next.js
+- Nuxt
+- Angular
+- Vue CLI
+- Parcel
+- Remix
+- Astro
+- Gatsby
+- SvelteKit
+- Webpack/Rollup/esbuild
+
+### Auto-detecção
+
+```ts
+import { detectDistDirectory } from "@seo-shell/seo-shell/server";
+
+const result = detectDistDirectory();
+
+console.log(result);
+```
+
+### Dist customizado
+
+```ts
+import { detectDistDirectory } from "@seo-shell/seo-shell/server";
+
+const result = detectDistDirectory({
+  customDistPath: "./my-custom-output",
+});
+```
+
+---
+
+## Configuração do Next.js
+
+### `next.config.js`
+
+```js
+import { withSeoShellSitemap } from "@seo-shell/seo-shell/server";
+
+const nextConfig = withSeoShellSitemap(
+  {
+    reactStrictMode: true,
+    transpilePackages: ["@seo-shell/seo-shell"],
+  },
+  {
+    publicSitemapSubdir: "/seo",
+    sitemapsRouteBasePath: "/sitemaps",
+    sitemapIndexRoute: "/sitemap.xml",
+    sitemapIndexPath: "/seo/sitemap.xml",
+    groups: ["cities", "professionals"],
+  }
+);
+
+export default nextConfig;
+```
+
+### `pages/_document.tsx`
+
+```tsx
+import { createSeoShellDocument } from "@seo-shell/seo-shell";
+
+export default createSeoShellDocument({
+  lang: "pt-BR",
+});
+```
+
+---
+
+## Sitemap
+
+O SEO Shell inclui um sistema completo de geração de sitemaps com fallback automático.
+
+### Opção 1: plugin no `next.config.js` (recomendado)
+
+O plugin configura automaticamente:
+
+- Rewrites para rotas paginadas `/sitemaps/{group}/:page.xml`
+- Rewrite do sitemap index quando `sitemapIndexRoute !== sitemapIndexPath`
+- Headers `Content-Type` e `Cache-Control` para sitemap(s)
+- Headers para `robots.txt`
+
+### Opção 2: configuração manual
+
+Se preferir, você pode configurar rewrites manualmente no Next:
+
+```js
+const nextConfig = {
+  reactStrictMode: true,
+  transpilePackages: ["@seo-shell/seo-shell"],
+  async rewrites() {
+    return [
+      {
+        source: "/sitemaps/cities/:page.xml",
+        destination: "/seo/cities-:page.xml",
+      },
+      {
+        source: "/sitemaps/professionals/:page.xml",
+        destination: "/seo/professionals-:page.xml",
+      },
+    ];
+  },
+};
+
+export default nextConfig;
+```
+
+### Gerando sitemaps
+
+Use `ensureSitemaps` no `getServerSideProps` para gerar sob demanda:
+
+```ts
+import type { EnsureSitemapsConfig } from "@seo-shell/seo-shell/server";
+
+export const sitemapConfig: EnsureSitemapsConfig = {
+  baseUrl: "https://myapp.com",
+  outputDir: "./public",
+  sitemapSubdir: "seo",
+  sitemapIndexPath: "sitemap.xml",
+  staleTimeMs: 1000 * 60 * 60,
+  groups: [
+    {
+      name: "static",
+      source: {
+        type: "static",
+        urls: [
+          "https://myapp.com",
+          "https://myapp.com/about",
+          "https://myapp.com/contact",
+        ],
+      },
+    },
+  ],
+  graphqlUrl: process.env.GRAPHQL_URL,
+};
+```
+
+### Tipos de source
+
+| Tipo               | Descrição                                 |
+| ------------------ | ----------------------------------------- |
+| `static`           | Lista fixa de URLs                        |
+| `jsonFile`         | Lê URLs de um arquivo JSON                |
+| `graphql`          | Uma query GraphQL única                   |
+| `graphqlPaginated` | Queries GraphQL paginadas                 |
+| `asyncFetcher`     | Função async customizada que retorna URLs |
+| `composite`        | Combina múltiplas fontes                  |
+
+### Fallback automático (erro)
+
+Se algum provider falhar, o SEO Shell:
+
+1. Loga o erro
+2. Gera um sitemap fallback com pelo menos a home
+3. Cria um sitemap de erros (`__errors.xml`) listando quais grupos falharam
+4. Sempre escreve `sitemap.xml` para não retornar 404
+
+---
+
+## Referência de API
+
+As mesmas APIs descritas na seção em inglês se aplicam aqui:
+
+- `createSeoShellApp(config)`
+- `seoShellApp.withSeoShell(handler, options?)`
+- `sendEvent(name, payload)`
+- `watchEvent(name, callback)`
+- `createEventBridge()`
+- `detectDistDirectory(options?)`
+- `getDistPath(options?)`
+- `getSupportedFrameworks()`
+- `writeWebAssetsManifestFromBuild(options)`
+
+### `detectDistDirectory(options?)`
+
+Detecta a pasta de build/dist do seu projeto SPA.
+
+```ts
+detectDistDirectory({
+  projectPath: string,
+  customDistPath: string,
+  expectHashedAssets: boolean,
+});
+```
+
+Retorna `DistDetectorResult | null`:
+
+```ts
+// {
+//   distPath: string,
+//   framework: FrameworkType,
+//   indexPath: string,
+//   hasHashedAssets: boolean
+// }
+```
+
+### `getDistPath(options?)`
+
+Retorna o dist path detectado ou lança erro se não encontrar.
+
+### `getSupportedFrameworks()`
+
+Retorna a lista de frameworks suportados pelo detector.
+
+### `writeWebAssetsManifestFromBuild(options)`
+
+Gera e escreve um manifesto de assets web a partir do seu build.
+
+```ts
+writeWebAssetsManifestFromBuild({
+  projectPath: string,
+  customDistPath: string,
+  expectHashedAssets: boolean,
+  outputDir: string,
+  manifestFileName: string,
+  indexFileName: string,
+});
+```
+
+---
+
+## Exemplo Real
+
+O fluxo é o mesmo descrito no inglês: usar o Next como camada SSR/SEO, servindo a SPA sem alterar o projeto dela.
+
+### `pages/index.tsx` (com geração de sitemap)
+
+```tsx
+import { seoShellApp } from "~/lib/seoShell";
+import { sitemapConfig } from "~/lib/sitemapConfig";
+
+export const getServerSideProps = seoShellApp.withSeoShell(
+  async () => ({ props: {} }),
+  {
+    ensureSitemaps: true,
+    sitemapConfig,
+  }
+);
+
+export default function HomePage() {
+  return null;
+}
+```
+
+### `pages/_app.tsx`
+
+```tsx
+import "~/styles/globals.css";
+import type { AppProps } from "next/app";
+import { SeoShellProvider } from "@seo-shell/seo-shell";
+
+export default function App({ Component, pageProps }: AppProps) {
+  const shell = pageProps.__seoShell;
+
+  if (!shell) {
+    return <Component {...pageProps} />;
+  }
+
+  return (
+    <SeoShellProvider
+      assets={shell.assets}
+      noIndex={shell.noIndex}
+      seo={{ ...shell.defaultSeo, ...pageProps.seo }}
+    >
+      <Component {...pageProps} />
+    </SeoShellProvider>
+  );
+}
+```
