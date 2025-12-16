@@ -47,6 +47,7 @@ Your SPA (unchanged) + SEO Shell = Google-friendly app
 - [Two-Way Communication (Optional)](#two-way-communication-optional)
 - [Smart Dist Detection](#smart-dist-detection)
 - [Next.js Configuration](#nextjs-configuration)
+- [Sitemap](#sitemap)
 - [Real-World Example](#real-world-example)
 - [API Reference](#api-reference)
 
@@ -539,6 +540,174 @@ export const useSpaNavigationEvents = () => {
   }, []);
 };
 ```
+
+---
+
+## Sitemap
+
+SEO Shell includes a complete sitemap generation system with automatic fallback handling. You can use it in two ways:
+
+### Option 1: Using the Next.js Config Plugin (Recommended)
+
+The `withSeoShellSitemap` plugin automatically configures `rewrites` and `headers` for your sitemaps:
+
+```ts
+import { withSeoShellSitemap } from "@seo-shell/seo-shell/server";
+
+const nextConfig = withSeoShellSitemap(
+  {
+    reactStrictMode: true,
+    transpilePackages: ["@seo-shell/seo-shell"],
+    images: {
+      domains: ["cdn.example.com"],
+    },
+  },
+  {
+    publicSitemapSubdir: "/seo",
+    sitemapIndexRoute: "/sitemap.xml",
+    sitemapIndexPath: "/sitemap.xml",
+    sitemapsRouteBasePath: "/sitemaps",
+    groups: ["cities", "professionals", "categories"],
+  }
+);
+
+export default nextConfig;
+```
+
+**What the plugin does:**
+
+- Creates rewrites from `/sitemaps/{group}/:page.xml` to `/seo/{group}-:page.xml`
+- Creates rewrite for sitemap index if `sitemapIndexRoute !== sitemapIndexPath`
+- Adds `Content-Type: application/xml` and `Cache-Control` headers for all sitemap files
+- Adds headers for `robots.txt`
+
+**Plugin Options:**
+
+| Option                  | Type       | Default        | Description                                      |
+| ----------------------- | ---------- | -------------- | ------------------------------------------------ |
+| `publicSitemapSubdir`   | `string`   | `/seo`         | Directory in `public/` where sitemaps are stored |
+| `sitemapIndexRoute`     | `string`   | `/sitemap.xml` | Public URL for the sitemap index                 |
+| `sitemapIndexPath`      | `string`   | `sitemap.xml`  | File path in `public/` for the sitemap index     |
+| `sitemapsRouteBasePath` | `string`   | `/sitemaps`    | Base path for paginated sitemap routes           |
+| `groups`                | `string[]` | `[]`           | Sitemap group names (e.g., `["cities", "pros"]`) |
+| `includeRobotsHeaders`  | `boolean`  | `true`         | Add headers for `robots.txt`                     |
+| `includeSitemapHeaders` | `boolean`  | `true`         | Add headers for sitemap files                    |
+
+### Option 2: Manual Configuration (Without Plugin)
+
+If you prefer manual control, configure rewrites yourself:
+
+```js
+const nextConfig = {
+  reactStrictMode: true,
+  transpilePackages: ["@seo-shell/seo-shell"],
+  async rewrites() {
+    return [
+      {
+        source: "/sitemaps/cities/:page.xml",
+        destination: "/seo/cities-:page.xml",
+      },
+      {
+        source: "/sitemaps/professionals/:page.xml",
+        destination: "/seo/professionals-:page.xml",
+      },
+    ];
+  },
+};
+
+export default nextConfig;
+```
+
+### Generating Sitemaps
+
+Use `ensureSitemaps` in your `getServerSideProps` to generate sitemaps on-demand:
+
+```ts
+import type { EnsureSitemapsConfig } from "@seo-shell/seo-shell/server";
+
+export const sitemapConfig: EnsureSitemapsConfig = {
+  baseUrl: "https://myapp.com",
+  outputDir: "./public",
+  sitemapSubdir: "seo",
+  sitemapIndexPath: "sitemap.xml",
+  staleTimeMs: 1000 * 60 * 60,
+  groups: [
+    {
+      name: "static",
+      source: {
+        type: "static",
+        urls: [
+          "https://myapp.com",
+          "https://myapp.com/about",
+          "https://myapp.com/contact",
+        ],
+      },
+    },
+    {
+      name: "cities",
+      source: {
+        type: "graphqlPaginated",
+        query: `query Cities($page: Int!, $pageSize: Int!) {
+          cities(page: $page, pageSize: $pageSize) {
+            items { slug }
+            hasMore
+          }
+        }`,
+        pageSize: 1000,
+        buildVariables: (page, pageSize) => ({ page, pageSize }),
+        mapPage: (data: any) => ({
+          urls: data.cities.items.map(
+            (c: any) => `https://myapp.com/cidade/${c.slug}`
+          ),
+          hasMore: data.cities.hasMore,
+        }),
+      },
+    },
+  ],
+  graphqlUrl: process.env.GRAPHQL_URL,
+};
+```
+
+Then trigger generation in a page:
+
+```tsx
+import { seoShellApp } from "~/lib/seoShell";
+import { sitemapConfig } from "~/lib/sitemapConfig";
+
+export const getServerSideProps = seoShellApp.withSeoShell(
+  async () => ({ props: {} }),
+  {
+    ensureSitemaps: true,
+    sitemapConfig,
+  }
+);
+
+export default function HomePage() {
+  return null;
+}
+```
+
+### Sitemap Source Types
+
+| Type               | Description                          |
+| ------------------ | ------------------------------------ |
+| `static`           | Fixed list of URLs                   |
+| `jsonFile`         | Read URLs from a JSON file           |
+| `graphql`          | Single GraphQL query                 |
+| `graphqlPaginated` | Paginated GraphQL queries            |
+| `asyncFetcher`     | Custom async function returning URLs |
+| `composite`        | Combine multiple sources             |
+
+### Automatic Fallback (Error Handling)
+
+If sitemap providers fail, SEO Shell automatically:
+
+1. **Logs the error** to the server console
+2. **Generates a fallback sitemap** with at least the homepage URL
+3. **Creates an error sitemap** (`__errors.xml`) listing which providers failed
+4. **Always writes `sitemap.xml`** so your site never returns 404 for sitemaps
+
+This ensures Google and other crawlers always receive a valid sitemap, even during partial failures.
 
 ---
 

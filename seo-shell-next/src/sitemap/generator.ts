@@ -11,6 +11,11 @@ import type {
 import { buildUrlSetXml, buildSitemapIndexXml } from "./xml";
 import { buildRobotsTxt } from "./robots";
 
+type ProviderError = {
+  groupName: string;
+  message: string;
+};
+
 const chunk = <T>(arr: T[], size: number): T[][] => {
   const out: T[][] = [];
   for (let i = 0; i < arr.length; i += size) {
@@ -74,10 +79,20 @@ export const generateSitemaps = async (
 
   const generatedSitemaps: GeneratedSitemap[] = [];
   const sitemapIndexUrls: string[] = [];
+  const providerErrors: ProviderError[] = [];
 
   for (const group of sitemapGroups) {
     const pageSize = group.pageSize ?? defaultPageSize;
-    const result = await group.provider();
+    let result: { name: string; urls: SitemapEntry[] } | null = null;
+
+    try {
+      result = await group.provider();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      providerErrors.push({ groupName: group.name, message });
+      continue;
+    }
+
     const urls: SitemapEntry[] = result.urls;
 
     if (urls.length === 0) {
@@ -108,10 +123,56 @@ export const generateSitemaps = async (
     });
   }
 
+  if (providerErrors.length > 0) {
+    const seoDir = path.resolve(outputDir, sitemapSubdir);
+    const fileName = "__errors.xml";
+    const filePath = path.resolve(seoDir, fileName);
+    const relativePath = `${sitemapSubdir}/${fileName}`;
+    const publicUrl = `${trimmedBaseUrl}/${relativePath}`;
+
+    const now = new Date().toISOString();
+    const urls: SitemapEntry[] = [
+      { loc: trimmedBaseUrl, lastmod: now },
+      ...providerErrors.map((e) => ({
+        loc: `${trimmedBaseUrl}/__seo_shell_sitemap_error/${encodeURIComponent(
+          `${e.groupName}:${e.message}`
+        )}`,
+        lastmod: now,
+      })),
+    ];
+
+    writeFile(filePath, buildUrlSetXml(urls));
+
+    generatedSitemaps.push({
+      name: fileName,
+      path: relativePath,
+      urlCount: urls.length,
+    });
+
+    sitemapIndexUrls.push(publicUrl);
+
+    console.error("[seo-shell] sitemap providers failed", providerErrors);
+  }
+
   let finalSitemapIndexPath: string | null = null;
+  const indexFullPath = path.resolve(outputDir, sitemapIndexPath);
+
   if (sitemapIndexUrls.length > 0) {
-    const indexFullPath = path.resolve(outputDir, sitemapIndexPath);
     writeFile(indexFullPath, buildSitemapIndexXml(sitemapIndexUrls));
+    finalSitemapIndexPath = sitemapIndexPath;
+  } else {
+    const now = new Date().toISOString();
+    const fallbackUrls: SitemapEntry[] = [
+      { loc: trimmedBaseUrl, lastmod: now },
+      ...providerErrors.map((e) => ({
+        loc: `${trimmedBaseUrl}/__seo_shell_sitemap_error/${encodeURIComponent(
+          `${e.groupName}:${e.message}`
+        )}`,
+        lastmod: now,
+      })),
+    ];
+
+    writeFile(indexFullPath, buildUrlSetXml(fallbackUrls));
     finalSitemapIndexPath = sitemapIndexPath;
   }
 

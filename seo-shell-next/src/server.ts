@@ -58,6 +58,12 @@ export {
 } from "./withSeoShell";
 
 export {
+  withSeoShellSitemap,
+  type SeoShellNextSitemapPluginOptions,
+  type NextConfigLike,
+} from "./nextSitemapPlugin";
+
+export {
   createSeoShellApp,
   type SeoShellApp,
   type SeoShellAppConfig,
