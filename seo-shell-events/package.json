@@ -1,6 +1,6 @@
 {
   "name": "@seo-shell/events",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Lightweight event bridge for SEO Shell - use in your SPA to receive data from Next.js",
   "type": "module",
   "main": "./dist/index.cjs",
