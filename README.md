@@ -47,6 +47,7 @@ Your SPA (unchanged) + SEO Shell = Google-friendly app
 - [Architecture](#architecture)
 - [Requirements](#requirements)
 - [Important Requirements](#important-requirements)
+- [Vite Setup (Required)](#vite-setup-required)
 - [Installation](#installation)
 - [Quick Start](#quick-start)
 - [Catch-All Route (Required)](#catch-all-route-required)
@@ -56,6 +57,7 @@ Your SPA (unchanged) + SEO Shell = Google-friendly app
 - [Sitemap](#sitemap)
 - [Real-World Example](#real-world-example)
 - [API Reference](#api-reference)
+- [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -224,6 +226,48 @@ Before you start, make sure you understand these **required** steps:
    ```
 
 3. **Add `SeoShellProvider` in `_app.tsx`** — Wraps your app with SEO capabilities. [See details](#3-add-the-provider-in-_apptsx)
+
+---
+
+## Vite Setup (Required)
+
+If your SPA uses Vite, these steps are **mandatory**:
+
+### 1. Configure `base` for CDN
+
+```ts
+// vite.config.ts
+export default defineConfig(({ mode }) => ({
+  base: mode === "production" ? "https://cdn.example.com/" : "/",
+  // ... rest of config
+}));
+```
+
+This ensures dynamic imports resolve to CDN URLs instead of localhost.
+
+### 2. Configure CORS on your CDN
+
+ES modules require CORS headers. Your CDN must return `Access-Control-Allow-Origin: *`.
+
+**Cloudflare R2 with custom domain:** CORS settings on R2 bucket don't apply to custom domains. Use **Transform Rules**:
+
+1. Cloudflare Dashboard → your domain → Rules → Transform Rules → Modify Response Header
+2. Create rule for `Hostname equals cdn.yourdomain.com`
+3. Add headers:
+   - `Access-Control-Allow-Origin`: `*`
+   - `Access-Control-Allow-Methods`: `GET, HEAD, OPTIONS`
+   - `Access-Control-Allow-Headers`: `*`
+
+**Cloudflare R2 with `*.r2.dev` domain:** Configure CORS in bucket settings.
+
+**AWS S3 / GCS:** Add CORS policy in bucket settings.
+
+### 3. Build and upload
+
+```bash
+npm run build
+# Upload dist/ to your CDN
+```
 
 ---
 
@@ -1001,6 +1045,99 @@ writeWebAssetsManifestFromBuild({
   indexFileName: string, // Index file to parse (default: "index.html")
 });
 ```
+
+---
+
+## Troubleshooting
+
+### CORS Error: "Access-Control-Allow-Origin" header missing
+
+**Symptom:** Browser console shows errors like:
+
+```
+Access to script at 'https://cdn.example.com/assets/index.js' from origin 'http://localhost:3000'
+has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+```
+
+**Cause:** ES modules (`type="module"` scripts) require CORS headers, unlike traditional scripts. Your CDN must return `Access-Control-Allow-Origin` headers.
+
+**Solution for Cloudflare R2:**
+
+1. Go to **Cloudflare Dashboard** → **R2 Object Storage**
+2. Click on your bucket
+3. Go to **Settings** tab
+4. Find **CORS Policy** section
+5. Add a new policy:
+
+| Field           | Value         |
+| --------------- | ------------- |
+| Allowed Origins | `*`           |
+| Allowed Methods | `GET`, `HEAD` |
+| Allowed Headers | `*`           |
+| Max Age         | `86400`       |
+
+Or via CLI with `wrangler`:
+
+```bash
+# Create cors.json
+cat > cors.json << 'EOF'
+[
+  {
+    "AllowedOrigins": ["*"],
+    "AllowedMethods": ["GET", "HEAD"],
+    "AllowedHeaders": ["*"],
+    "MaxAgeSeconds": 86400
+  }
+]
+EOF
+
+# Apply to bucket
+npx wrangler r2 bucket cors put YOUR_BUCKET_NAME --rules ./cors.json
+```
+
+**Solution for AWS S3:**
+
+Add CORS configuration in S3 bucket settings:
+
+```json
+[
+  {
+    "AllowedHeaders": ["*"],
+    "AllowedMethods": ["GET", "HEAD"],
+    "AllowedOrigins": ["*"],
+    "MaxAgeSeconds": 86400
+  }
+]
+```
+
+**Solution for Google Cloud Storage:**
+
+```bash
+gsutil cors set cors.json gs://YOUR_BUCKET_NAME
+```
+
+### Dynamic imports loading from localhost instead of CDN
+
+**Symptom:** Browser console shows errors like:
+
+```
+:3000/assets/js/Home-xxx.js:1 Failed to load module script: Expected a JavaScript module script
+but the server responded with a MIME type of "text/html".
+```
+
+**Cause:** Vite generates dynamic imports with relative paths. When the script runs from your Next.js server, the browser resolves these paths relative to `localhost:3000` instead of the CDN.
+
+**Solution:** Configure `base` in your Vite project to use the CDN URL:
+
+```ts
+// vite.config.ts
+export default defineConfig({
+  base: "https://cdn.example.com/",
+  // ... rest of config
+});
+```
+
+Then rebuild your SPA and upload to the CDN again. All dynamic imports will now use absolute CDN URLs.
 
 ---
 

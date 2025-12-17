@@ -39,3 +39,15 @@ export const watchEvent = <T = SeoShellEventPayload>(
     window.removeEventListener(`${EVENT_PREFIX}${eventName}`, listener);
   };
 };
+
+export const getEventPayload = <T = unknown>(eventName: string): T | null => {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  const win = window as unknown as {
+    __SEO_SHELL_EVENTS__?: Record<string, unknown>;
+  };
+
+  return (win.__SEO_SHELL_EVENTS__?.[eventName] as T) ?? null;
+};

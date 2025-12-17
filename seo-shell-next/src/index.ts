@@ -2,7 +2,7 @@ export { CdnAppBootstrap } from "./CdnAppBootstrap";
 export type { CdnAppBootstrapProps } from "./CdnAppBootstrap";
 
 export { SeoShellProvider } from "./SeoShellProvider";
-export type { SeoShellProviderProps } from "./SeoShellProvider";
+export type { SeoShellProviderProps, SeoShellEvent } from "./SeoShellProvider";
 
 export { CdnAppShellPage } from "./CdnAppShellPage";
 export type { CdnAppShellPageProps } from "./CdnAppShellPage";
@@ -37,7 +37,12 @@ export {
 } from "./seo/seoHelpers";
 export type { BuildOgImageInput } from "./seo/seoHelpers";
 
-export { sendEvent, watchEvent, createEventBridge } from "./events";
+export {
+  sendEvent,
+  watchEvent,
+  getEventPayload,
+  createEventBridge,
+} from "./events";
 export type { SeoShellEventPayload, SeoShellEventHandler } from "./events";
 
 export { SeoShellDocument, createSeoShellDocument } from "./SeoShellDocument";

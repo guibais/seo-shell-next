@@ -59,7 +59,7 @@ export const CdnAppBootstrap = ({
       />
 
       {jsSrcs.map((src: string) => (
-        <Script key={src} src={src} strategy="afterInteractive" />
+        <Script key={src} src={src} type="module" strategy="afterInteractive" />
       ))}
     </>
   );
